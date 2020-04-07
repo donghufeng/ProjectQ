@@ -13,14 +13,14 @@
 // limitations under the License.
 
 template <class V, class M>
-inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, std::size_t d2, M const& m, M const& mt)
+inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, std::size_t d2, M const &m, M const &mt)
 {
     __m256d v[4];
 
-    v[0] = load2(&psi[I]);
-    v[1] = load2(&psi[I + d0]);
-    v[2] = load2(&psi[I + d1]);
-    v[3] = load2(&psi[I + d0 + d1]);
+    v[0] = load2(psi + 2 * I);
+    v[1] = load2(psi + 2 * (I + d0));
+    v[2] = load2(psi + 2 * (I + d1));
+    v[3] = load2(psi + 2 * (I + d0 + d1));
 
     __m256d tmp[4];
 
@@ -29,23 +29,22 @@ inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, s
     tmp[2] = add(mul(v[0], m[8], mt[8]), add(mul(v[1], m[9], mt[9]), add(mul(v[2], m[10], mt[10]), mul(v[3], m[11], mt[11]))));
     tmp[3] = add(mul(v[0], m[12], mt[12]), add(mul(v[1], m[13], mt[13]), add(mul(v[2], m[14], mt[14]), mul(v[3], m[15], mt[15]))));
 
-    v[0] = load2(&psi[I + d2]);
-    v[1] = load2(&psi[I + d0 + d2]);
-    v[2] = load2(&psi[I + d1 + d2]);
-    v[3] = load2(&psi[I + d0 + d1 + d2]);
+    v[0] = load2(psi + 2 * (I + d2));
+    v[1] = load2(psi + 2 * (I + d0 + d2));
+    v[2] = load2(psi + 2 * (I + d1 + d2));
+    v[3] = load2(psi + 2 * (I + d0 + d1 + d2));
 
-    _mm256_storeu2_m128d((double*)&psi[I + d0], (double*)&psi[I], add(tmp[0], add(mul(v[0], m[16], mt[16]), add(mul(v[1], m[17], mt[17]), add(mul(v[2], m[18], mt[18]), mul(v[3], m[19], mt[19]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d1], (double*)&psi[I + d1], add(tmp[1], add(mul(v[0], m[20], mt[20]), add(mul(v[1], m[21], mt[21]), add(mul(v[2], m[22], mt[22]), mul(v[3], m[23], mt[23]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d2], (double*)&psi[I + d2], add(tmp[2], add(mul(v[0], m[24], mt[24]), add(mul(v[1], m[25], mt[25]), add(mul(v[2], m[26], mt[26]), mul(v[3], m[27], mt[27]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d1 + d2], (double*)&psi[I + d1 + d2], add(tmp[3], add(mul(v[0], m[28], mt[28]), add(mul(v[1], m[29], mt[29]), add(mul(v[2], m[30], mt[30]), mul(v[3], m[31], mt[31]))))));
-
+    _mm256_storeu2_m128d(psi + 2 * (I + d0), psi + 2 * (I), add(tmp[0], add(mul(v[0], m[16], mt[16]), add(mul(v[1], m[17], mt[17]), add(mul(v[2], m[18], mt[18]), mul(v[3], m[19], mt[19]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d1), psi + 2 * (I + d1), add(tmp[1], add(mul(v[0], m[20], mt[20]), add(mul(v[1], m[21], mt[21]), add(mul(v[2], m[22], mt[22]), mul(v[3], m[23], mt[23]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d2), psi + 2 * (I + d2), add(tmp[2], add(mul(v[0], m[24], mt[24]), add(mul(v[1], m[25], mt[25]), add(mul(v[2], m[26], mt[26]), mul(v[3], m[27], mt[27]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d1 + d2), psi + 2 * (I + d1 + d2), add(tmp[3], add(mul(v[0], m[28], mt[28]), add(mul(v[1], m[29], mt[29]), add(mul(v[2], m[30], mt[30]), mul(v[3], m[31], mt[31]))))));
 }
 
 // bit indices id[.] are given from high to low (e.g. control first for CNOT)
 template <class V, class M>
-void kernel(V &psi, unsigned id2, unsigned id1, unsigned id0, M const& m, std::size_t ctrlmask)
+void kernel(V &psi, unsigned id2, unsigned id1, unsigned id0, M const &m, std::size_t ctrlmask, unsigned len)
 {
-    std::size_t n = psi.size();
+    std::size_t n = len;
     std::size_t d0 = 1UL << id0;
     std::size_t d1 = 1UL << id1;
     std::size_t d2 = 1UL << id2;
@@ -54,33 +53,44 @@ void kernel(V &psi, unsigned id2, unsigned id1, unsigned id0, M const& m, std::s
     __m256d mmt[32];
 
     __m256d neg = _mm256_setr_pd(1.0, -1.0, 1.0, -1.0);
-    for (unsigned i = 0; i < 32; ++i){
+    for (unsigned i = 0; i < 32; ++i)
+    {
         auto badc = _mm256_permute_pd(mm[i], 5);
         mmt[i] = _mm256_mul_pd(badc, neg);
     }
 
-    std::size_t dsorted[] = {d0 , d1, d2};
+    std::size_t dsorted[] = {d0, d1, d2};
     std::sort(dsorted, dsorted + 3, std::greater<std::size_t>());
 
-    if (ctrlmask == 0){
-        #pragma omp for collapse(LOOP_COLLAPSE3) schedule(static)
-        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0]){
-            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1]){
-                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2]){
-                    for (std::size_t i3 = 0; i3 < dsorted[2]; ++i3){
+    if (ctrlmask == 0)
+    {
+#pragma omp for collapse(LOOP_COLLAPSE3) schedule(static)
+        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0])
+        {
+            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1])
+            {
+                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2])
+                {
+                    for (std::size_t i3 = 0; i3 < dsorted[2]; ++i3)
+                    {
                         kernel_core(psi, i0 + i1 + i2 + i3, d0, d1, d2, mm, mmt);
                     }
                 }
             }
         }
     }
-    else{
-        #pragma omp for collapse(LOOP_COLLAPSE3) schedule(static)
-        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0]){
-            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1]){
-                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2]){
-                    for (std::size_t i3 = 0; i3 < dsorted[2]; ++i3){
-                        if (((i0 + i1 + i2 + i3)&ctrlmask) == ctrlmask)
+    else
+    {
+#pragma omp for collapse(LOOP_COLLAPSE3) schedule(static)
+        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0])
+        {
+            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1])
+            {
+                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2])
+                {
+                    for (std::size_t i3 = 0; i3 < dsorted[2]; ++i3)
+                    {
+                        if (((i0 + i1 + i2 + i3) & ctrlmask) == ctrlmask)
                             kernel_core(psi, i0 + i1 + i2 + i3, d0, d1, d2, mm, mmt);
                     }
                 }
@@ -88,4 +98,3 @@ void kernel(V &psi, unsigned id2, unsigned id1, unsigned id0, M const& m, std::s
         }
     }
 }
-

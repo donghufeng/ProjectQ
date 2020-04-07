@@ -13,14 +13,14 @@
 // limitations under the License.
 
 template <class V, class M>
-inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, std::size_t d2, std::size_t d3, M const& m, M const& mt)
+inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, std::size_t d2, std::size_t d3, M const &m, M const &mt)
 {
     __m256d v[4];
 
-    v[0] = load2(&psi[I]);
-    v[1] = load2(&psi[I + d0]);
-    v[2] = load2(&psi[I + d1]);
-    v[3] = load2(&psi[I + d0 + d1]);
+    v[0] = load2(psi + 2 * I);
+    v[1] = load2(psi + 2 * (I + d0));
+    v[2] = load2(psi + 2 * (I + d1));
+    v[3] = load2(psi + 2 * (I + d0 + d1));
 
     __m256d tmp[8];
 
@@ -33,10 +33,10 @@ inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, s
     tmp[6] = add(mul(v[0], m[24], mt[24]), add(mul(v[1], m[25], mt[25]), add(mul(v[2], m[26], mt[26]), mul(v[3], m[27], mt[27]))));
     tmp[7] = add(mul(v[0], m[28], mt[28]), add(mul(v[1], m[29], mt[29]), add(mul(v[2], m[30], mt[30]), mul(v[3], m[31], mt[31]))));
 
-    v[0] = load2(&psi[I + d2]);
-    v[1] = load2(&psi[I + d0 + d2]);
-    v[2] = load2(&psi[I + d1 + d2]);
-    v[3] = load2(&psi[I + d0 + d1 + d2]);
+    v[0] = load2(psi + 2 * (I + d2));
+    v[1] = load2(psi + 2 * (I + d0 + d2));
+    v[2] = load2(psi + 2 * (I + d1 + d2));
+    v[3] = load2(psi + 2 * (I + d0 + d1 + d2));
 
     tmp[0] = add(tmp[0], add(mul(v[0], m[32], mt[32]), add(mul(v[1], m[33], mt[33]), add(mul(v[2], m[34], mt[34]), mul(v[3], m[35], mt[35])))));
     tmp[1] = add(tmp[1], add(mul(v[0], m[36], mt[36]), add(mul(v[1], m[37], mt[37]), add(mul(v[2], m[38], mt[38]), mul(v[3], m[39], mt[39])))));
@@ -47,10 +47,10 @@ inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, s
     tmp[6] = add(tmp[6], add(mul(v[0], m[56], mt[56]), add(mul(v[1], m[57], mt[57]), add(mul(v[2], m[58], mt[58]), mul(v[3], m[59], mt[59])))));
     tmp[7] = add(tmp[7], add(mul(v[0], m[60], mt[60]), add(mul(v[1], m[61], mt[61]), add(mul(v[2], m[62], mt[62]), mul(v[3], m[63], mt[63])))));
 
-    v[0] = load2(&psi[I + d3]);
-    v[1] = load2(&psi[I + d0 + d3]);
-    v[2] = load2(&psi[I + d1 + d3]);
-    v[3] = load2(&psi[I + d0 + d1 + d3]);
+    v[0] = load2(psi + 2 * (I + d3));
+    v[1] = load2(psi + 2 * (I + d0 + d3));
+    v[2] = load2(psi + 2 * (I + d1 + d3));
+    v[3] = load2(psi + 2 * (I + d0 + d1 + d3));
 
     tmp[0] = add(tmp[0], add(mul(v[0], m[64], mt[64]), add(mul(v[1], m[65], mt[65]), add(mul(v[2], m[66], mt[66]), mul(v[3], m[67], mt[67])))));
     tmp[1] = add(tmp[1], add(mul(v[0], m[68], mt[68]), add(mul(v[1], m[69], mt[69]), add(mul(v[2], m[70], mt[70]), mul(v[3], m[71], mt[71])))));
@@ -61,27 +61,26 @@ inline void kernel_core(V &psi, std::size_t I, std::size_t d0, std::size_t d1, s
     tmp[6] = add(tmp[6], add(mul(v[0], m[88], mt[88]), add(mul(v[1], m[89], mt[89]), add(mul(v[2], m[90], mt[90]), mul(v[3], m[91], mt[91])))));
     tmp[7] = add(tmp[7], add(mul(v[0], m[92], mt[92]), add(mul(v[1], m[93], mt[93]), add(mul(v[2], m[94], mt[94]), mul(v[3], m[95], mt[95])))));
 
-    v[0] = load2(&psi[I + d2 + d3]);
-    v[1] = load2(&psi[I + d0 + d2 + d3]);
-    v[2] = load2(&psi[I + d1 + d2 + d3]);
-    v[3] = load2(&psi[I + d0 + d1 + d2 + d3]);
+    v[0] = load2(psi + 2 * (I + d2 + d3));
+    v[1] = load2(psi + 2 * (I + d0 + d2 + d3));
+    v[2] = load2(psi + 2 * (I + d1 + d2 + d3));
+    v[3] = load2(psi + 2 * (I + d0 + d1 + d2 + d3));
 
-    _mm256_storeu2_m128d((double*)&psi[I + d0], (double*)&psi[I], add(tmp[0], add(mul(v[0], m[96], mt[96]), add(mul(v[1], m[97], mt[97]), add(mul(v[2], m[98], mt[98]), mul(v[3], m[99], mt[99]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d1], (double*)&psi[I + d1], add(tmp[1], add(mul(v[0], m[100], mt[100]), add(mul(v[1], m[101], mt[101]), add(mul(v[2], m[102], mt[102]), mul(v[3], m[103], mt[103]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d2], (double*)&psi[I + d2], add(tmp[2], add(mul(v[0], m[104], mt[104]), add(mul(v[1], m[105], mt[105]), add(mul(v[2], m[106], mt[106]), mul(v[3], m[107], mt[107]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d1 + d2], (double*)&psi[I + d1 + d2], add(tmp[3], add(mul(v[0], m[108], mt[108]), add(mul(v[1], m[109], mt[109]), add(mul(v[2], m[110], mt[110]), mul(v[3], m[111], mt[111]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d3], (double*)&psi[I + d3], add(tmp[4], add(mul(v[0], m[112], mt[112]), add(mul(v[1], m[113], mt[113]), add(mul(v[2], m[114], mt[114]), mul(v[3], m[115], mt[115]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d1 + d3], (double*)&psi[I + d1 + d3], add(tmp[5], add(mul(v[0], m[116], mt[116]), add(mul(v[1], m[117], mt[117]), add(mul(v[2], m[118], mt[118]), mul(v[3], m[119], mt[119]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d2 + d3], (double*)&psi[I + d2 + d3], add(tmp[6], add(mul(v[0], m[120], mt[120]), add(mul(v[1], m[121], mt[121]), add(mul(v[2], m[122], mt[122]), mul(v[3], m[123], mt[123]))))));
-    _mm256_storeu2_m128d((double*)&psi[I + d0 + d1 + d2 + d3], (double*)&psi[I + d1 + d2 + d3], add(tmp[7], add(mul(v[0], m[124], mt[124]), add(mul(v[1], m[125], mt[125]), add(mul(v[2], m[126], mt[126]), mul(v[3], m[127], mt[127]))))));
-
+    _mm256_storeu2_m128d(psi + 2 * (I + d0), psi + 2 * I, add(tmp[0], add(mul(v[0], m[96], mt[96]), add(mul(v[1], m[97], mt[97]), add(mul(v[2], m[98], mt[98]), mul(v[3], m[99], mt[99]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d1), psi + 2 * (I + d1), add(tmp[1], add(mul(v[0], m[100], mt[100]), add(mul(v[1], m[101], mt[101]), add(mul(v[2], m[102], mt[102]), mul(v[3], m[103], mt[103]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d2), psi + 2 * (I + d2), add(tmp[2], add(mul(v[0], m[104], mt[104]), add(mul(v[1], m[105], mt[105]), add(mul(v[2], m[106], mt[106]), mul(v[3], m[107], mt[107]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d1 + d2), psi + 2 * (I + d1 + d2), add(tmp[3], add(mul(v[0], m[108], mt[108]), add(mul(v[1], m[109], mt[109]), add(mul(v[2], m[110], mt[110]), mul(v[3], m[111], mt[111]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d3), psi + 2 * (I + d3), add(tmp[4], add(mul(v[0], m[112], mt[112]), add(mul(v[1], m[113], mt[113]), add(mul(v[2], m[114], mt[114]), mul(v[3], m[115], mt[115]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d1 + d3), psi + 2 * (I + d1 + d3), add(tmp[5], add(mul(v[0], m[116], mt[116]), add(mul(v[1], m[117], mt[117]), add(mul(v[2], m[118], mt[118]), mul(v[3], m[119], mt[119]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d2 + d3), psi + 2 * (I + d2 + d3), add(tmp[6], add(mul(v[0], m[120], mt[120]), add(mul(v[1], m[121], mt[121]), add(mul(v[2], m[122], mt[122]), mul(v[3], m[123], mt[123]))))));
+    _mm256_storeu2_m128d(psi + 2 * (I + d0 + d1 + d2 + d3), psi + 2 * (I + d1 + d2 + d3), add(tmp[7], add(mul(v[0], m[124], mt[124]), add(mul(v[1], m[125], mt[125]), add(mul(v[2], m[126], mt[126]), mul(v[3], m[127], mt[127]))))));
 }
 
 // bit indices id[.] are given from high to low (e.g. control first for CNOT)
 template <class V, class M>
-void kernel(V &psi, unsigned id3, unsigned id2, unsigned id1, unsigned id0, M const& m, std::size_t ctrlmask)
+void kernel(V &psi, unsigned id3, unsigned id2, unsigned id1, unsigned id0, M const &m, std::size_t ctrlmask, unsigned len)
 {
-    std::size_t n = psi.size();
+    std::size_t n = len;
     std::size_t d0 = 1UL << id0;
     std::size_t d1 = 1UL << id1;
     std::size_t d2 = 1UL << id2;
@@ -91,21 +90,28 @@ void kernel(V &psi, unsigned id3, unsigned id2, unsigned id1, unsigned id0, M co
     __m256d mmt[128];
 
     __m256d neg = _mm256_setr_pd(1.0, -1.0, 1.0, -1.0);
-    for (unsigned i = 0; i < 128; ++i){
+    for (unsigned i = 0; i < 128; ++i)
+    {
         auto badc = _mm256_permute_pd(mm[i], 5);
         mmt[i] = _mm256_mul_pd(badc, neg);
     }
 
-    std::size_t dsorted[] = {d0 , d1, d2, d3};
+    std::size_t dsorted[] = {d0, d1, d2, d3};
     std::sort(dsorted, dsorted + 4, std::greater<std::size_t>());
 
-    if (ctrlmask == 0){
-        #pragma omp for collapse(LOOP_COLLAPSE4) schedule(static)
-        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0]){
-            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1]){
-                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2]){
-                    for (std::size_t i3 = 0; i3 < dsorted[2]; i3 += 2 * dsorted[3]){
-                        for (std::size_t i4 = 0; i4 < dsorted[3]; ++i4){
+    if (ctrlmask == 0)
+    {
+#pragma omp for collapse(LOOP_COLLAPSE4) schedule(static)
+        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0])
+        {
+            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1])
+            {
+                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2])
+                {
+                    for (std::size_t i3 = 0; i3 < dsorted[2]; i3 += 2 * dsorted[3])
+                    {
+                        for (std::size_t i4 = 0; i4 < dsorted[3]; ++i4)
+                        {
                             kernel_core(psi, i0 + i1 + i2 + i3 + i4, d0, d1, d2, d3, mm, mmt);
                         }
                     }
@@ -113,14 +119,20 @@ void kernel(V &psi, unsigned id3, unsigned id2, unsigned id1, unsigned id0, M co
             }
         }
     }
-    else{
-        #pragma omp for collapse(LOOP_COLLAPSE4) schedule(static)
-        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0]){
-            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1]){
-                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2]){
-                    for (std::size_t i3 = 0; i3 < dsorted[2]; i3 += 2 * dsorted[3]){
-                        for (std::size_t i4 = 0; i4 < dsorted[3]; ++i4){
-                            if (((i0 + i1 + i2 + i3 + i4)&ctrlmask) == ctrlmask)
+    else
+    {
+#pragma omp for collapse(LOOP_COLLAPSE4) schedule(static)
+        for (std::size_t i0 = 0; i0 < n; i0 += 2 * dsorted[0])
+        {
+            for (std::size_t i1 = 0; i1 < dsorted[0]; i1 += 2 * dsorted[1])
+            {
+                for (std::size_t i2 = 0; i2 < dsorted[1]; i2 += 2 * dsorted[2])
+                {
+                    for (std::size_t i3 = 0; i3 < dsorted[2]; i3 += 2 * dsorted[3])
+                    {
+                        for (std::size_t i4 = 0; i4 < dsorted[3]; ++i4)
+                        {
+                            if (((i0 + i1 + i2 + i3 + i4) & ctrlmask) == ctrlmask)
                                 kernel_core(psi, i0 + i1 + i2 + i3 + i4, d0, d1, d2, d3, mm, mmt);
                         }
                     }
@@ -129,4 +141,3 @@ void kernel(V &psi, unsigned id3, unsigned id2, unsigned id1, unsigned id0, M co
         }
     }
 }
-
